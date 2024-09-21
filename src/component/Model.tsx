@@ -35,23 +35,26 @@ export default React.memo(function Model({
   // Initialize muscle data with 0 levels for each muscle
   const [muscleData, setMuscleData] = React.useState<Record<Muscle, { level: number }>>(data || DEFAULT_MUSCLE_DATA);
 
-  // Function to handle clicking on muscles
-  const handleClick = (muscle: Muscle, callback?: (stats: Record<Muscle, { level: number }>) => void) => {
-    setMuscleData(prevState => {
-      if (!prevState) prevState = DEFAULT_MUSCLE_DATA;
-      const currentLevel = prevState[muscle].level || 0;
-      const nextLevel = (currentLevel + 1) % 4; // Cycle through 0 (no level), 1, 2, 3
+  const handleClick = React.useCallback(
+    (muscle: Muscle, callback?: (stats: Record<Muscle, { level: number }>) => void) => {
+      setMuscleData(prevState => {
+        const currentLevel = prevState[muscle]?.level || 0;
+        const nextLevel = (currentLevel + 1) % 4; // Cycle through levels
 
-      const updatedData = {
-        ...prevState,
-        [muscle]: { level: nextLevel },
-      };
+        const updatedData = {
+          ...prevState,
+          [muscle]: { level: nextLevel },
+        };
 
-      // Trigger the callback if provided
-      callback && callback(updatedData);
-      return updatedData;
-    });
-  };
+        return updatedData;
+      });
+
+      if (callback) {
+        setTimeout(() => callback(muscleData), 0); // Delay callback to avoid render issues
+      }
+    },
+    [muscleData]
+  );
 
   const modelData = type === ModelType.ANTERIOR ? anteriorData : posteriorData;
 
