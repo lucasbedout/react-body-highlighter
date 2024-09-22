@@ -85,9 +85,9 @@ export interface IMuscleStats {
 
 export interface IModelProps {
   bodyColor?: string;
-  data?: Record<Muscle, { level: number }>;
+  data?: Partial<Record<Muscle, { level: number }>>;
   highlightedColors?: string[];
-  onClick?: ((exercise: Record<Muscle, { level: number }>) => void) | (() => void);
+  onClick?: ((exercise: Partial<Record<Muscle, { level: number }>>) => void) | (() => void);
   style?: CSSProperties;
   svgStyle?: CSSProperties;
   type?: ModelType;

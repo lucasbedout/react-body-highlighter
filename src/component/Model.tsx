@@ -3,7 +3,13 @@ import * as React from 'react';
 import { ModelType, Muscle, IModelProps } from './metadata';
 import { anteriorData, posteriorData } from '../assets';
 import { ensure } from '../utils';
-import { DEFAULT_BODY_COLOR, DEFAULT_HIGHLIGHTED_COLORS, DEFAULT_MODEL_TYPE, DEFAULT_MUSCLE_DATA } from '../constants';
+import {
+  DEFAULT_ANTERIOR_MUSCLE_DATA,
+  DEFAULT_BODY_COLOR,
+  DEFAULT_HIGHLIGHTED_COLORS,
+  DEFAULT_MODEL_TYPE,
+  DEFAULT_POSTERIOR_MUSCLE_DATA,
+} from '../constants';
 
 /**
  * Component which displays a model of a body. Accepts many optional props for manipulating functionality or visuals of the component.
@@ -33,30 +39,42 @@ export default React.memo(function Model({
   type = DEFAULT_MODEL_TYPE,
 }: IModelProps) {
   // Initialize muscle data with 0 levels for each muscle
-  const [muscleData, setMuscleData] = React.useState<Record<Muscle, { level: number }>>(data || DEFAULT_MUSCLE_DATA);
+  const baseData = type === ModelType.ANTERIOR ? DEFAULT_ANTERIOR_MUSCLE_DATA : DEFAULT_POSTERIOR_MUSCLE_DATA;
 
+  const [muscleData, setMuscleData] = React.useState<Partial<Record<Muscle, { level: number }>>>({
+    ...baseData,
+    ...data,
+  });
+
+  // Filter the model data (anterior or posterior) based on the selected type
+  const modelData = type === ModelType.ANTERIOR ? anteriorData : posteriorData;
+
+  // Handle muscle click events and update only the muscles related to the current model type
   const handleClick = React.useCallback(
-    (muscle: Muscle, callback?: (stats: Record<Muscle, { level: number }>) => void) => {
+    (muscle: Muscle, callback?: (stats: Partial<Record<Muscle, { level: number }>>) => void) => {
       setMuscleData(prevState => {
+        // Only update muscles from the current view
+        if (!modelData.some(m => m.muscle === muscle)) {
+          return prevState; // Ignore muscles not in the current view
+        }
+
         const currentLevel = prevState[muscle]?.level || 0;
-        const nextLevel = (currentLevel + 1) % 4; // Cycle through levels
+        const nextLevel = currentLevel === 3 ? 9 : currentLevel + 1; // Cycle through levels
 
         const updatedData = {
           ...prevState,
           [muscle]: { level: nextLevel },
         };
 
+        if (callback) {
+          setTimeout(() => callback(updatedData), 0); // Delay callback to avoid render issues
+        }
+
         return updatedData;
       });
-
-      if (callback) {
-        setTimeout(() => callback(muscleData), 0); // Delay callback to avoid render issues
-      }
     },
-    [muscleData]
+    [modelData]
   );
-
-  const modelData = type === ModelType.ANTERIOR ? anteriorData : posteriorData;
 
   return (
     <div style={style} className="rbh-wrapper">
